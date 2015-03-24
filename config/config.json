@@ -1,0 +1,41 @@
+[
+  {
+    "development": {
+      "workers": 2,
+      "base_port": 8100,
+      "cache_ttl": 3600,
+      "memcached": {
+        "servers": ["localhost:11211"],
+        "options": {
+          "retries": 0,
+          "timeout": 500
+        }
+      },
+      "worker": {
+        "port": 8183,
+        "timeout": 10000,
+        "parse_delay": 5000,
+        "user_agent": "PhearBot/0.1.0 - http://phear.io"
+      }
+    },
+    "production": {
+      "workers": 6,
+      "base_port": 9100,
+      "cache_ttl": 604800,
+      "memcached": {
+        "servers": ["localhost:11211"],
+        "options": {
+          "retries": 0,
+          "timeout": 500
+        }
+      },
+      "worker": {
+        "port": 8183,
+        "timeout": 10000,
+        "parse_delay": 5000,
+        "user_agent": "PhearBot/0.1.0 - http://phear.io",
+        "allowed_clients": ["127.0.0.1"]
+      }
+    }
+  }
+]

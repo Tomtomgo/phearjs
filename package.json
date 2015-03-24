@@ -1,0 +1,27 @@
+{
+  "name": "PhearJS",
+  "version": "0.1.0",
+  "description": "A little server for parsing dynamic websites.",
+  "dependencies": {
+    "express": "latest",
+    "memcached": "latest",
+    "querystring": "latest",
+    "request": "latest",
+    "respawn": "latest",
+    "serve-favicon": "latest",
+    "strftime": "latest",
+    "url": "latest",
+    "yargs": "latest"
+  },
+  "devDependencies": {
+    "gulp": "latest",
+    "gulp-chmod": "latest",
+    "gulp-coffee": "latest",
+    "gulp-insert": "latest",
+    "gulp-load-plugins": "latest",
+    "gulp-run": "latest",
+    "gulp-size": "latest",
+    "gulp-util": "latest",
+    "run-sequence": "latest"
+  }
+}
