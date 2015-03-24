@@ -1,4 +1,5 @@
-# PhearJS
+![PhearJS](http://d3jtdrwnfjguwh.cloudfront.net/logo-red.svg)
+
 
 PhearJS is a service that parses and evaluates (dynamic) webpages. It runs a server which supervises a set number of PhantomJS workers that do the actual parsing and evaluation.
 
