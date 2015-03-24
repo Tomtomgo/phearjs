@@ -6,6 +6,8 @@ Many websites rely on AJAX and front-end rendering. When a *machine* requests a 
 
 This is a problem when you want to scrape such a website or create a static copy of your dynamic site for SEO purposes. PhearJS helps you with this, by rendering pages in a headless [PhantomJS](http://phantomjs.org/) browser and returning a JSON containing the rendered page and meta data about the response.
 
+PhearJS was built and tested on Ubuntu 14.04, but should work on most Linux distributions. OSX reportedly works fine as well, though the installation instructions don't apply here. Proper installation instructions for OSX are [very welcome](#contributing).
+
 ## Example
 
 ### Request
@@ -36,8 +38,6 @@ curl -X GET "http://localhost:8100? \
   "content": "<rendered HTML>"
 }
 ```
-
-PhearJS was built and tested on Ubuntu 14.04, but should work on most Linux distributions. OSX reportedly works fine as well, though the installation instructions don't apply here. Proper installation instructions for OSX are [very welcome](#contributing).
 
 # Usage
 
