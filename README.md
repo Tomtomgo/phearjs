@@ -4,7 +4,18 @@ PhearJS is a service that parses and evaluates (dynamic) webpages. It runs a ser
 
 Many websites rely on AJAX and front-end rendering. When a *machine* requests a page from such a website it gets a completely different page than you would when viewing it in a browser. 
 
-This is a problem when you want to scrape such a website or create a static copy of your dynamic site for SEO purposes. PhearJS helps you with this, by rendering pages in a headless [PhantomJS](http://phantomjs.org/) browser and returning a JSON containing the rendered page and meta data about the response:
+This is a problem when you want to scrape such a website or create a static copy of your dynamic site for SEO purposes. PhearJS helps you with this, by rendering pages in a headless [PhantomJS](http://phantomjs.org/) browser and returning a JSON containing the rendered page and meta data about the response.
+
+## Example
+
+### Request
+
+```bash
+curl -X GET "http://localhost:8100? \
+  fetch_url=http%3A%2F%2Fsuch-website.com"
+```
+
+### Response
 
 ``` json
 {
