@@ -89,8 +89,9 @@ In any case make sure:
 1. Open an issue in this repository.
 2. Fork the project.
 3. Fix or create.
-4. Update these docs if applicable.
-5. Make a pull request referencing the issue.
+4. Build with `gulp build`.
+5. Update these docs if applicable.
+6. Make a pull request referencing the issue.
 
 # Credits
 
