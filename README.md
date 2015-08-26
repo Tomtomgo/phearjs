@@ -75,6 +75,10 @@ PhearJS accepts the following parameters:
 
 Check out [these instructions](INSTALLATION.md).
 
+## Related projects
+
+* [phearjs-express](https://github.com/Tomtomgo/phearjs-express): An Express middleware to serve prerendered pages to bots and search engines.
+
 ## Contributing
 
 Contributions are always welcome!
