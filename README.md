@@ -42,7 +42,7 @@ curl -X GET "http://localhost:8100? \
 }
 ```
 
-# Usage
+## Usage
 
 Requests can be made to http://localhost:8100?fetch_url=http%3A%2F%2Fdomain.com in development mode or http://<PHEAR_IP>:<PHEAR_PORT>?fetch_url=http%3A%2F%2Fdomain.com in production mode.
 
@@ -71,11 +71,11 @@ PhearJS accepts the following parameters:
   A namespace to use on the cache. Can be useful for multi-client settings.
   Default: *global-*.
 
-# Installation, set-up and running
+## Installation, set-up and running
 
 Check out [these instructions](INSTALLATION.md).
 
-# Contributing
+## Contributing
 
 Contributions are always welcome!
 
@@ -93,11 +93,11 @@ In any case make sure:
 5. Update these docs if applicable.
 6. Make a pull request referencing the issue.
 
-# Credits
+## Credits
 
 This project was initiated at [Shuffler.fm](http://shuffler.fm) and continued at [Achieved.co](http://achieved.co).
 
-# License
+## License
 
 PhearJS is copyright 2014-2015 Tom Aizenberg, Marcel Gonzalez Corso.
 
