@@ -1,5 +1,5 @@
 {
-  "name": "PhearJS",
+  "name": "phearjs",
   "version": "0.2.0",
   "homepage": "http://phear.io",
   "description": "Render any dynamic Javascript webpage to JSON with PhantomJS.",
