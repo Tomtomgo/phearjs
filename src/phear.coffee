@@ -1,7 +1,7 @@
 #
 # Phear.js
 # -------------
-# This is the main PhearJS process. It serves and controls the PhantomJS workers.  
+# This is the main PhearJS process. It serves and controls the PhantomJS workers.
 #
 # For setup info see INSTALLATION.md
 # For usage info see README.md
@@ -12,14 +12,14 @@ spawn = (n) ->
   for _, i in workers
     workers[i] = {process: null, port: config.worker.port}
     worker_config = JSON.stringify(config.worker)
-    
+
     # Create worker object
     workers[i].process = respawn(["phantomjs",
-                                  "--load-images=no", 
-                                  "--disk-cache=no", 
-                                  "--ignore-ssl-errors=yes", 
+                                  "--load-images=no",
+                                  "--disk-cache=no",
+                                  "--ignore-ssl-errors=yes",
                                   "--ssl-protocol=any",
-                                  "lib/worker.js", 
+                                  "lib/worker.js",
                                   "--config=#{worker_config}"], {
       cwd: '.',
       sleep:1000,
@@ -37,7 +37,7 @@ spawn = (n) ->
 serve = (port) ->
   app = express()
   app.use(favicon("assets/favicon.png")) # Favicons are important.
-  
+
   app.get '/', (req, res) ->
     handle_request(req, res)
 
@@ -47,88 +47,108 @@ serve = (port) ->
 
 # Request handler
 handle_request = (req, res) ->
+  thread_number = next_thread_number()
 
   res.header("Access-Control-Allow-Origin", "*")
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept")
 
   # In all environments except development, check the IPs and only allow pre-defined addresses.
-  # We do this both here and in the worker to prevent not-allowed IPs to bypass this and make  
+  # We do this both here and in the worker to prevent not-allowed IPs to bypass this and make
   # requests directly to the worker.
   if mode != "development" and not ip_allowed(req.headers["real-ip"])
     res.statusCode = 403
-    return close_response("phear", "Forbiddena.", res)
+    return close_response("phear-#{thread_number}", "Forbidden.", res)
 
   # Check if the necessary params are set and aren't empty
   if not req.query.fetch_url?
     res.statusCode = 400
-    return close_response("phear", "No URL requested, you have to set fetch_url=encoded_url.", res)
-  
+    return close_response("phear-#{thread_number}", "No URL requested, you have to set fetch_url=encoded_url.", res)
+
   # Response with JSON/raw results
   respond = (statusCode, body) ->
-    if req.query.raw of ["true", "1"]
+    if req.query.raw in ["true", "1"]
       parsed_body = JSON.parse(body)
       res.status(statusCode).send(parsed_body.content)
     else
       res.set "content-type", "application/json"
       res.status(statusCode).send(body)
-    
+
     res.end()
-  
+
   cache_namespace = "global-"
-  
+
   if req.query.cache_namespace?
     cache_namespace = req.query.cache_namespace
 
   cache_key = "#{cache_namespace}#{req.query.fetch_url}"
-  
+
   # Where the magic happens.
   memcached.get cache_key, (error, data) ->
-    
+
     # Check if we can and should fetch, or serve from cache
-    if error? or not data? or req.query.force of ["true", "1"]
-      worker = random_worker()
-      
-      headers = {}
+    if error? or not data? or req.query.force in ["true", "1"]
+      do_with_random_worker thread_number, (worker) ->
 
-      # Optionally add some headers to the request
-      if req.query.headers?
-        try 
-          headers = JSON.parse(req.query.headers)
-        catch
-          res.statusCode = 400
-          return close_response("phear", "Additional headers not properly formatted, e.g.: encodeURIComponent('{extra: \"Yes.\"}').", res)
-      
-      # Make the URL for the worker
-      worker_request_url = url.format {
-        protocol: "http"
-        hostname: "localhost"
-        port: worker.port
-        query: req.query
-        headers: headers
-      }
+        headers = {}
 
-      # Make the request to the worker and store in cache if status is 200 (don't store bad requests)
-      request {url: worker_request_url, headers: {'real-ip': req.headers['real-ip']}}, (error, response, body) ->
-        if response.statusCode == 200
-          memcached.set cache_key, body, config.cache_ttl, ->
-            logger.info "phear", "Stored #{req.query.fetch_url} in cache"
+        # Optionally add some headers to the request
+        if req.query.headers?
+          try
+            headers = JSON.parse(req.query.headers)
+          catch
+            res.statusCode = 400
+            return close_response("phear-#{thread_number}", "Additional headers not properly formatted, e.g.: encodeURIComponent('{extra: \"Yes.\"}').", res)
 
-        # Return to requester!
-        respond(response.statusCode, body)
+        # Make the URL for the worker
+        worker_request_url = url.format {
+          protocol: "http"
+          hostname: "localhost"
+          port: worker.port
+          query: req.query
+          headers: headers
+        }
+
+        # Make the request to the worker and store in cache if status is 200 (don't store bad requests)
+        request {url: worker_request_url, headers: {'real-ip': req.headers['real-ip']}}, (error, response, body) ->
+          try
+            if response.statusCode == 200
+              memcached.set cache_key, body, config.cache_ttl, ->
+                logger.info "phear-#{thread_number}", "Stored #{req.query.fetch_url} in cache"
+
+            # Return to requester!
+            respond(response.statusCode, body)
+          catch
+            logger.error "phear-#{thread_number}", "REQUEST FAILED: #{error.message}"
+            respond(500, "Request failed.")
+
+            if worker.process.status not in ["stopping", "stopped"]
+              logger.info "phear-#{thread_number}", "Trying to restart worker with PID #{worker.process.pid}..."
+              worker.process.stop(->
+                if worker.process.status == "stopped"
+                  worker.process.start()
+                  logger.info "phear-#{thread_number}", "Restarted worker with PID #{worker.process.pid}."
+              )
+            else
+              logger.info "phear-#{thread_number}", "Worker with PID #{worker.process.pid} is being restarted..."
+
     else
-      logger.info "phear", "Serving entry from cache."
+      logger.info "phear-#{thread_number}", "Serving entry from cache."
       respond(200, data)
 
 # Fetch a random running worker
-random_worker = ->
-  while worker?.process?.status != "running"
-    worker = workers[Math.floor(Math.random()*workers.length)]
-  worker
+do_with_random_worker = (thread_number, callback) ->
+  running_workers = (worker for worker in workers when worker.process.status is "running")
+
+  if running_workers.length > 0
+    callback running_workers[Math.floor(Math.random()*running_workers.length)]
+  else
+    logger.info "phear-#{thread_number}", "No running workers, waiting for a new worker to come up."
+    setTimeout (-> do_with_random_worker(thread_number, callback)), 500
 
 # Prettily close a response
 close_response = (inst, status, response) ->
   response.set "content-type", "application/json"
-  
+
   logger.info inst, "Ending process."
   if [400, 403, 500].indexOf(response.statusCode) > -1
     response.status(response.statusCode).send JSON.stringify(
@@ -138,17 +158,19 @@ close_response = (inst, status, response) ->
   response.end()
   logger.info inst, "Ended process with status #{status.toUpperCase()}."
 
+# Count the number of request handler threads
+next_thread_number = ->
+  mommy.handler_threads = if mommy.handler_threads > 10000 then 1 else mommy.handler_threads + 1
+
 ip_allowed = (ip) ->
   config.worker.allowed_clients.indexOf(ip) isnt -1
 
 stop = ->
-  logger.info "phear", "Kill process and workers."
-  
-  # Send stop signal to all workers.
-  for worker in workers
-    worker.process.stop()
+  logger.info "phear", "Trying to kill process and #{workers.length} workers gently..."
 
-  process.kill()
+  tree_kill process.pid, 'SIGTERM', ->
+    logger.info "phear", "Trying to kill process and workers forcefully..."
+    tree_kill process.pid, 'SIGKILL'
 
 # Initialization
 # -----------------
@@ -160,6 +182,7 @@ request = require('request')
 url = require('url')
 Memcached = require('memcached')
 favicon = require('serve-favicon')
+tree_kill = require('tree-kill');
 
 argv = require('yargs')
     .usage('Parse dynamic webpages.\nUsage: $0')
@@ -184,7 +207,10 @@ config.worker.environment = mode
 # Instantiate stuff
 logger = new Logger(config, config.base_port)
 workers = new Array(config.workers)
-memcached = new Memcached(config.memcached.servers, config.memcached.options)
+
+memcached_options = config.memcached.options
+memcached_options.poolSize = config.workers * 10
+memcached = new Memcached(config.memcached.servers, memcached_options)
 
 # Make sure workers die on memcached errors.
 memcached.on 'issue', (f) ->
@@ -197,7 +223,7 @@ memcached.stats((_)->true)
 # Make sure that when the process is stopped due to an exception
 # the PhantomJS processes also stop.
 process.on 'uncaughtException', (err) ->
-  logger.info "phear", "UNCAUGHT ERROR: #{err.stack}"
+  logger.error "phear", "UNCAUGHT ERROR: #{err.stack}"
   stop()
 
 logger.info "phear", "Starting Phear..."
@@ -207,7 +233,11 @@ logger.info "phear", "Config file: #{argv.c}"
 logger.info "phear", "Port: #{config.base_port}"
 logger.info "phear", "Workers: #{config.workers}"
 logger.info "phear", "=================================="
-  
+
+# Ssshhhh
+mommy = this
+mommy.handler_threads = 0
+
 # Actually start the service!
 spawn(config.workers)
 serve(config.base_port)

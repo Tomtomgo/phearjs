@@ -1,7 +1,7 @@
 [
   {
     "development": {
-      "workers": 2,
+      "workers": 4,
       "base_port": 8100,
       "cache_ttl": 3600,
       "memcached": {

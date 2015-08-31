@@ -1,11 +1,11 @@
 #! /usr/bin/env node
 (function() {
-  var Config, Logger, Memcached, argv, close_response, config, express, favicon, handle_request, ip_allowed, logger, memcached, mode, random_worker, request, respawn, serve, spawn, stop, url, workers;
+  var Config, Logger, Memcached, argv, close_response, config, do_with_random_worker, express, favicon, handle_request, ip_allowed, logger, memcached, memcached_options, mode, mommy, next_thread_number, request, respawn, serve, spawn, stop, tree_kill, url, workers;
 
   spawn = function(n) {
-    var i, worker_config, _, _i, _len, _results;
-    _results = [];
-    for (i = _i = 0, _len = workers.length; _i < _len; i = ++_i) {
+    var _, i, j, len, results, worker_config;
+    results = [];
+    for (i = j = 0, len = workers.length; j < len; i = ++j) {
       _ = workers[i];
       workers[i] = {
         process: null,
@@ -20,9 +20,9 @@
       });
       workers[i].process.start();
       config.worker.port += 1;
-      _results.push(logger.info("phear", "Worker " + (i + 1) + " of " + n + " started."));
+      results.push(logger.info("phear", "Worker " + (i + 1) + " of " + n + " started."));
     }
-    return _results;
+    return results;
   };
 
   serve = function(port) {
@@ -37,20 +37,21 @@
   };
 
   handle_request = function(req, res) {
-    var cache_key, cache_namespace, respond;
+    var cache_key, cache_namespace, respond, thread_number;
+    thread_number = next_thread_number();
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
     if (mode !== "development" && !ip_allowed(req.headers["real-ip"])) {
       res.statusCode = 403;
-      return close_response("phear", "Forbiddena.", res);
+      return close_response("phear-" + thread_number, "Forbidden.", res);
     }
     if (req.query.fetch_url == null) {
       res.statusCode = 400;
-      return close_response("phear", "No URL requested, you have to set fetch_url=encoded_url.", res);
+      return close_response("phear-" + thread_number, "No URL requested, you have to set fetch_url=encoded_url.", res);
     }
     respond = function(statusCode, body) {
-      var parsed_body;
-      if (req.query.raw in ["true", "1"]) {
+      var parsed_body, ref;
+      if ((ref = req.query.raw) === "true" || ref === "1") {
         parsed_body = JSON.parse(body);
         res.status(statusCode).send(parsed_body.content);
       } else {
@@ -65,51 +66,85 @@
     }
     cache_key = "" + cache_namespace + req.query.fetch_url;
     return memcached.get(cache_key, function(error, data) {
-      var headers, worker, worker_request_url;
-      if ((error != null) || (data == null) || req.query.force in ["true", "1"]) {
-        worker = random_worker();
-        headers = {};
-        if (req.query.headers != null) {
-          try {
-            headers = JSON.parse(req.query.headers);
-          } catch (_error) {
-            res.statusCode = 400;
-            return close_response("phear", "Additional headers not properly formatted, e.g.: encodeURIComponent('{extra: \"Yes.\"}').", res);
+      var ref;
+      if ((error != null) || (data == null) || ((ref = req.query.force) === "true" || ref === "1")) {
+        return do_with_random_worker(thread_number, function(worker) {
+          var headers, worker_request_url;
+          headers = {};
+          if (req.query.headers != null) {
+            try {
+              headers = JSON.parse(req.query.headers);
+            } catch (_error) {
+              res.statusCode = 400;
+              return close_response("phear-" + thread_number, "Additional headers not properly formatted, e.g.: encodeURIComponent('{extra: \"Yes.\"}').", res);
+            }
           }
-        }
-        worker_request_url = url.format({
-          protocol: "http",
-          hostname: "localhost",
-          port: worker.port,
-          query: req.query,
-          headers: headers
-        });
-        return request({
-          url: worker_request_url,
-          headers: {
-            'real-ip': req.headers['real-ip']
-          }
-        }, function(error, response, body) {
-          if (response.statusCode === 200) {
-            memcached.set(cache_key, body, config.cache_ttl, function() {
-              return logger.info("phear", "Stored " + req.query.fetch_url + " in cache");
-            });
-          }
-          return respond(response.statusCode, body);
+          worker_request_url = url.format({
+            protocol: "http",
+            hostname: "localhost",
+            port: worker.port,
+            query: req.query,
+            headers: headers
+          });
+          return request({
+            url: worker_request_url,
+            headers: {
+              'real-ip': req.headers['real-ip']
+            }
+          }, function(error, response, body) {
+            var ref1;
+            try {
+              if (response.statusCode === 200) {
+                memcached.set(cache_key, body, config.cache_ttl, function() {
+                  return logger.info("phear-" + thread_number, "Stored " + req.query.fetch_url + " in cache");
+                });
+              }
+              return respond(response.statusCode, body);
+            } catch (_error) {
+              logger.error("phear-" + thread_number, "REQUEST FAILED: " + error.message);
+              respond(500, "Request failed.");
+              if ((ref1 = worker.process.status) !== "stopping" && ref1 !== "stopped") {
+                logger.info("phear-" + thread_number, "Trying to restart worker with PID " + worker.process.pid + "...");
+                return worker.process.stop(function() {
+                  if (worker.process.status === "stopped") {
+                    worker.process.start();
+                    return logger.info("phear-" + thread_number, "Restarted worker with PID " + worker.process.pid + ".");
+                  }
+                });
+              } else {
+                return logger.info("phear-" + thread_number, "Worker with PID " + worker.process.pid + " is being restarted...");
+              }
+            }
+          });
         });
       } else {
-        logger.info("phear", "Serving entry from cache.");
+        logger.info("phear-" + thread_number, "Serving entry from cache.");
         return respond(200, data);
       }
     });
   };
 
-  random_worker = function() {
-    var worker, _ref;
-    while ((worker != null ? (_ref = worker.process) != null ? _ref.status : void 0 : void 0) !== "running") {
-      worker = workers[Math.floor(Math.random() * workers.length)];
+  do_with_random_worker = function(thread_number, callback) {
+    var running_workers, worker;
+    running_workers = (function() {
+      var j, len, results;
+      results = [];
+      for (j = 0, len = workers.length; j < len; j++) {
+        worker = workers[j];
+        if (worker.process.status === "running") {
+          results.push(worker);
+        }
+      }
+      return results;
+    })();
+    if (running_workers.length > 0) {
+      return callback(running_workers[Math.floor(Math.random() * running_workers.length)]);
+    } else {
+      logger.info("phear-" + thread_number, "No running workers, waiting for a new worker to come up.");
+      return setTimeout((function() {
+        return do_with_random_worker(thread_number, callback);
+      }), 500);
     }
-    return worker;
   };
 
   close_response = function(inst, status, response) {
@@ -125,18 +160,20 @@
     return logger.info(inst, "Ended process with status " + (status.toUpperCase()) + ".");
   };
 
+  next_thread_number = function() {
+    return mommy.handler_threads = mommy.handler_threads > 10000 ? 1 : mommy.handler_threads + 1;
+  };
+
   ip_allowed = function(ip) {
     return config.worker.allowed_clients.indexOf(ip) !== -1;
   };
 
   stop = function() {
-    var worker, _i, _len;
-    logger.info("phear", "Kill process and workers.");
-    for (_i = 0, _len = workers.length; _i < _len; _i++) {
-      worker = workers[_i];
-      worker.process.stop();
-    }
-    return process.kill();
+    logger.info("phear", "Trying to kill process and " + workers.length + " workers gently...");
+    return tree_kill(process.pid, 'SIGTERM', function() {
+      logger.info("phear", "Trying to kill process and workers forcefully...");
+      return tree_kill(process.pid, 'SIGKILL');
+    });
   };
 
   express = require('express');
@@ -150,6 +187,8 @@
   Memcached = require('memcached');
 
   favicon = require('serve-favicon');
+
+  tree_kill = require('tree-kill');
 
   argv = require('yargs').usage('Parse dynamic webpages.\nUsage: $0').example('$0 -c', 'location of phear configuration file').alias('c', 'config').example('$0 -e', 'environment to run in.').alias('e', 'environment')["default"]({
     c: "./config/config.json",
@@ -170,7 +209,11 @@
 
   workers = new Array(config.workers);
 
-  memcached = new Memcached(config.memcached.servers, config.memcached.options);
+  memcached_options = config.memcached.options;
+
+  memcached_options.poolSize = config.workers * 10;
+
+  memcached = new Memcached(config.memcached.servers, memcached_options);
 
   memcached.on('issue', function(f) {
     logger.info("phear", "Memcache failed: " + f.messages);
@@ -182,7 +225,7 @@
   });
 
   process.on('uncaughtException', function(err) {
-    logger.info("phear", "UNCAUGHT ERROR: " + err.stack);
+    logger.error("phear", "UNCAUGHT ERROR: " + err.stack);
     return stop();
   });
 
@@ -199,6 +242,10 @@
   logger.info("phear", "Workers: " + config.workers);
 
   logger.info("phear", "==================================");
+
+  mommy = this;
+
+  mommy.handler_threads = 0;
 
   spawn(config.workers);
 

@@ -13,9 +13,14 @@ class Logger
     @port = port
 
   info: (this_inst, message) ->
-    date_string = strftime("%Y-%m-%d %H:%M:%S")
-    console.log "#{date_string} [#{@space_pad_id(this_inst, 20)}] #{message}"
-    
+    console.log "#{@date_string()} [#{@space_pad_id(this_inst, 20)}] #{message}"
+
+  error: (this_inst, message) ->
+    console.error "\x1b[1m\x1b[31m#{@date_string()} [#{@space_pad_id(this_inst, 20)}] #{message}\x1b[0m"
+
+  date_string: ->
+    strftime("%Y-%m-%d %H:%M:%S")
+
   space_pad_id: (id, length) ->
     id = "#{id}:#{@port}"
     id = " " + id while id.length < length
