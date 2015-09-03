@@ -39,7 +39,14 @@ serve = (port) ->
   app.use(favicon("assets/favicon.png")) # Favicons are important.
 
   app.get '/', (req, res) ->
-    handle_request(req, res)
+    running_workers_count = get_running_workers().length
+
+    # Check that we aren't overserving our workers
+    if active_request_handlers >= running_workers_count * config.worker.max_connections
+      res.statusCode = 503
+      close_response("phear", "Service unavailable, maximum number of allowed connections reached.", res)
+    else
+      handle_request(req, res)
 
   app.listen(port)
 
@@ -64,6 +71,14 @@ handle_request = (req, res) ->
     res.statusCode = 400
     return close_response("phear-#{thread_number}", "No URL requested, you have to set fetch_url=encoded_url.", res)
 
+  # Check headers for validity if set
+  if req.query.headers?
+    try
+      JSON.parse(req.query.headers)
+    catch
+      res.statusCode = 400
+      return close_response("phear-#{thread_number}", "Additional headers not properly formatted, e.g.: encodeURIComponent('{extra: \"Yes.\"}').", res)
+
   # Response with JSON/raw results
   respond = (statusCode, body) ->
     if req.query.raw in ["true", "1"]
@@ -74,7 +89,9 @@ handle_request = (req, res) ->
       res.status(statusCode).send(body)
 
     res.end()
+    active_request_handlers -= 1
 
+  active_request_handlers += 1
   cache_namespace = "global-"
 
   if req.query.cache_namespace?
@@ -89,23 +106,12 @@ handle_request = (req, res) ->
     if error? or not data? or req.query.force in ["true", "1"]
       do_with_random_worker thread_number, (worker) ->
 
-        headers = {}
-
-        # Optionally add some headers to the request
-        if req.query.headers?
-          try
-            headers = JSON.parse(req.query.headers)
-          catch
-            res.statusCode = 400
-            return close_response("phear-#{thread_number}", "Additional headers not properly formatted, e.g.: encodeURIComponent('{extra: \"Yes.\"}').", res)
-
         # Make the URL for the worker
         worker_request_url = url.format {
           protocol: "http"
           hostname: "localhost"
           port: worker.port
           query: req.query
-          headers: headers
         }
 
         # Make the request to the worker and store in cache if status is 200 (don't store bad requests)
@@ -118,8 +124,8 @@ handle_request = (req, res) ->
             # Return to requester!
             respond(response.statusCode, body)
           catch
-            logger.error "phear-#{thread_number}", "REQUEST FAILED: #{error.message}"
-            respond(500, "Request failed.")
+            res.statusCode = 500
+            close_response("phear-#{thread_number}", "Request failed due to an internal server error.", res)
 
             if worker.process.status not in ["stopping", "stopped"]
               logger.info "phear-#{thread_number}", "Trying to restart worker with PID #{worker.process.pid}..."
@@ -131,13 +137,15 @@ handle_request = (req, res) ->
             else
               logger.info "phear-#{thread_number}", "Worker with PID #{worker.process.pid} is being restarted..."
 
+            active_request_handlers -= 1
+
     else
       logger.info "phear-#{thread_number}", "Serving entry from cache."
       respond(200, data)
 
 # Fetch a random running worker
 do_with_random_worker = (thread_number, callback) ->
-  running_workers = (worker for worker in workers when worker.process.status is "running")
+  running_workers = get_running_workers()
 
   if running_workers.length > 0
     callback running_workers[Math.floor(Math.random()*running_workers.length)]
@@ -145,12 +153,15 @@ do_with_random_worker = (thread_number, callback) ->
     logger.info "phear-#{thread_number}", "No running workers, waiting for a new worker to come up."
     setTimeout (-> do_with_random_worker(thread_number, callback)), 500
 
+get_running_workers = ->
+  (worker for worker in workers when worker.process.status is "running")
+
 # Prettily close a response
 close_response = (inst, status, response) ->
   response.set "content-type", "application/json"
 
   logger.info inst, "Ending process."
-  if [400, 403, 500].indexOf(response.statusCode) > -1
+  if [400, 403, 500, 503].indexOf(response.statusCode) > -1
     response.status(response.statusCode).send JSON.stringify(
       success: false
       reason: status
@@ -237,6 +248,9 @@ logger.info "phear", "=================================="
 # Ssshhhh
 mommy = this
 mommy.handler_threads = 0
+
+# Count the number of active request handlers to prevent failures due to overloading.
+active_request_handlers = 0
 
 # Actually start the service!
 spawn(config.workers)

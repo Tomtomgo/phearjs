@@ -1,6 +1,6 @@
 #! /usr/bin/env node
 (function() {
-  var Config, Logger, Memcached, argv, close_response, config, do_with_random_worker, express, favicon, handle_request, ip_allowed, logger, memcached, memcached_options, mode, mommy, next_thread_number, request, respawn, serve, spawn, stop, tree_kill, url, workers;
+  var Config, Logger, Memcached, active_request_handlers, argv, close_response, config, do_with_random_worker, express, favicon, get_running_workers, handle_request, ip_allowed, logger, memcached, memcached_options, mode, mommy, next_thread_number, request, respawn, serve, spawn, stop, tree_kill, url, workers;
 
   spawn = function(n) {
     var _, i, j, len, results, worker_config;
@@ -30,7 +30,14 @@
     app = express();
     app.use(favicon("assets/favicon.png"));
     app.get('/', function(req, res) {
-      return handle_request(req, res);
+      var running_workers_count;
+      running_workers_count = get_running_workers().length;
+      if (active_request_handlers >= running_workers_count * config.worker.max_connections) {
+        res.statusCode = 503;
+        return close_response("phear", "Service unavailable, maximum number of allowed connections reached.", res);
+      } else {
+        return handle_request(req, res);
+      }
     });
     app.listen(port);
     return logger.info("phear", "Phear started.");
@@ -49,6 +56,14 @@
       res.statusCode = 400;
       return close_response("phear-" + thread_number, "No URL requested, you have to set fetch_url=encoded_url.", res);
     }
+    if (req.query.headers != null) {
+      try {
+        JSON.parse(req.query.headers);
+      } catch (_error) {
+        res.statusCode = 400;
+        return close_response("phear-" + thread_number, "Additional headers not properly formatted, e.g.: encodeURIComponent('{extra: \"Yes.\"}').", res);
+      }
+    }
     respond = function(statusCode, body) {
       var parsed_body, ref;
       if ((ref = req.query.raw) === "true" || ref === "1") {
@@ -58,8 +73,10 @@
         res.set("content-type", "application/json");
         res.status(statusCode).send(body);
       }
-      return res.end();
+      res.end();
+      return active_request_handlers -= 1;
     };
+    active_request_handlers += 1;
     cache_namespace = "global-";
     if (req.query.cache_namespace != null) {
       cache_namespace = req.query.cache_namespace;
@@ -69,22 +86,12 @@
       var ref;
       if ((error != null) || (data == null) || ((ref = req.query.force) === "true" || ref === "1")) {
         return do_with_random_worker(thread_number, function(worker) {
-          var headers, worker_request_url;
-          headers = {};
-          if (req.query.headers != null) {
-            try {
-              headers = JSON.parse(req.query.headers);
-            } catch (_error) {
-              res.statusCode = 400;
-              return close_response("phear-" + thread_number, "Additional headers not properly formatted, e.g.: encodeURIComponent('{extra: \"Yes.\"}').", res);
-            }
-          }
+          var worker_request_url;
           worker_request_url = url.format({
             protocol: "http",
             hostname: "localhost",
             port: worker.port,
-            query: req.query,
-            headers: headers
+            query: req.query
           });
           return request({
             url: worker_request_url,
@@ -101,19 +108,20 @@
               }
               return respond(response.statusCode, body);
             } catch (_error) {
-              logger.error("phear-" + thread_number, "REQUEST FAILED: " + error.message);
-              respond(500, "Request failed.");
+              res.statusCode = 500;
+              close_response("phear-" + thread_number, "Request failed due to an internal server error.", res);
               if ((ref1 = worker.process.status) !== "stopping" && ref1 !== "stopped") {
                 logger.info("phear-" + thread_number, "Trying to restart worker with PID " + worker.process.pid + "...");
-                return worker.process.stop(function() {
+                worker.process.stop(function() {
                   if (worker.process.status === "stopped") {
                     worker.process.start();
                     return logger.info("phear-" + thread_number, "Restarted worker with PID " + worker.process.pid + ".");
                   }
                 });
               } else {
-                return logger.info("phear-" + thread_number, "Worker with PID " + worker.process.pid + " is being restarted...");
+                logger.info("phear-" + thread_number, "Worker with PID " + worker.process.pid + " is being restarted...");
               }
+              return active_request_handlers -= 1;
             }
           });
         });
@@ -125,18 +133,8 @@
   };
 
   do_with_random_worker = function(thread_number, callback) {
-    var running_workers, worker;
-    running_workers = (function() {
-      var j, len, results;
-      results = [];
-      for (j = 0, len = workers.length; j < len; j++) {
-        worker = workers[j];
-        if (worker.process.status === "running") {
-          results.push(worker);
-        }
-      }
-      return results;
-    })();
+    var running_workers;
+    running_workers = get_running_workers();
     if (running_workers.length > 0) {
       return callback(running_workers[Math.floor(Math.random() * running_workers.length)]);
     } else {
@@ -147,10 +145,22 @@
     }
   };
 
+  get_running_workers = function() {
+    var j, len, results, worker;
+    results = [];
+    for (j = 0, len = workers.length; j < len; j++) {
+      worker = workers[j];
+      if (worker.process.status === "running") {
+        results.push(worker);
+      }
+    }
+    return results;
+  };
+
   close_response = function(inst, status, response) {
     response.set("content-type", "application/json");
     logger.info(inst, "Ending process.");
-    if ([400, 403, 500].indexOf(response.statusCode) > -1) {
+    if ([400, 403, 500, 503].indexOf(response.statusCode) > -1) {
       response.status(response.statusCode).send(JSON.stringify({
         success: false,
         reason: status
@@ -246,6 +256,8 @@
   mommy = this;
 
   mommy.handler_threads = 0;
+
+  active_request_handlers = 0;
 
   spawn(config.workers);
 

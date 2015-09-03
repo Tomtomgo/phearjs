@@ -15,7 +15,8 @@
         "port": 8183,
         "timeout": 10000,
         "parse_delay": 5000,
-        "user_agent": "PhearBot/0.1.0 - http://phear.io"
+        "user_agent": "PhearBot/0.3.0 - http://phear.io",
+        "max_connections": 10
       }
     },
     "production": {
@@ -33,7 +34,8 @@
         "port": 8183,
         "timeout": 10000,
         "parse_delay": 5000,
-        "user_agent": "PhearBot/0.1.0 - http://phear.io",
+        "user_agent": "PhearBot/0.3.0 - http://phear.io",
+        "max_connections": 10,
         "allowed_clients": ["127.0.0.1"]
       }
     }

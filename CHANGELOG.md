@@ -1,5 +1,11 @@
 # Changelog
 
+### 0.3.0
+
+Added connection limiter to prevent failure due to overloading
+Improved/fixed header passing to workers
+Improved response on server error
+
 ### 0.2.0
 
 Added memcached pool
