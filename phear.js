@@ -1,6 +1,6 @@
 #! /usr/bin/env node
 (function() {
-  var Config, Logger, Memcached, active_request_handlers, argv, close_response, config, do_with_random_worker, express, favicon, get_running_workers, handle_request, ip_allowed, logger, memcached, memcached_options, mode, mommy, next_thread_number, request, respawn, serve, spawn, stop, tree_kill, url, workers;
+  var Config, Logger, Memcached, active_request_handlers, argv, close_response, config, do_with_random_worker, express, favicon, get_running_workers, handle_request, ip_allowed, logger, memcached, memcached_options, mode, mommy, next_thread_number, package_definition, request, respawn, serve, spawn, stop, tree_kill, url, workers;
 
   spawn = function(n) {
     var _, i, j, len, results, worker_config;
@@ -12,7 +12,7 @@
         port: config.worker.port
       };
       worker_config = JSON.stringify(config.worker);
-      workers[i].process = respawn(["phantomjs", "--load-images=no", "--disk-cache=no", "--ignore-ssl-errors=yes", "--ssl-protocol=any", "lib/worker.js", "--config=" + worker_config], {
+      workers[i].process = respawn(["phantomjs", "--disk-cache=no", "--ignore-ssl-errors=yes", "--ssl-protocol=any", "lib/worker.js", "--config=" + worker_config], {
         cwd: '.',
         sleep: 1000,
         stdio: [0, 1, 2],
@@ -200,6 +200,8 @@
 
   tree_kill = require('tree-kill');
 
+  package_definition = require('./package.json');
+
   argv = require('yargs').usage('Parse dynamic webpages.\nUsage: $0').example('$0 -c', 'location of phear configuration file').alias('c', 'config').example('$0 -e', 'environment to run in.').alias('e', 'environment')["default"]({
     c: "./config/config.json",
     e: "development"
@@ -242,6 +244,8 @@
   logger.info("phear", "Starting Phear...");
 
   logger.info("phear", "==================================");
+
+  logger.info("phear", "Version: " + package_definition.version);
 
   logger.info("phear", "Mode: " + mode);
 

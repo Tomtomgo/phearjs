@@ -1,5 +1,10 @@
 # Changelog
 
+### 0.3.1
+
+Added version information on startup
+Workaround for [memory leak in QT](https://bugreports.qt.io/browse/QTBUG-38857) ([relevant PhantomJS issue](https://github.com/ariya/phantomjs/issues/12903))
+
 ### 0.3.0
 
 Added connection limiter to prevent failure due to overloading
