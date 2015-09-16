@@ -1,0 +1,36 @@
+doctype html
+html
+  head
+    meta(charset='utf-8')
+    meta(http-equiv='X-UA-Compatible', content='IE=edge')
+    meta(name='viewport', content='width=device-width, initial-scale=1')
+
+    link(rel='stylesheet', type='text/css', href='mui.min.css')
+    script(src='mui.min.js')
+
+    //- link(rel='stylesheet', type='text/css', href='phear.css')
+  body
+    .mui-container
+      h1 PhearJS status
+      .mui-panel
+        .mui-row
+          .mui-col-md-4
+
+          .mui-col-md-4
+            table.mui-table
+              thead
+                tr
+                  th(colspan=2) General stats
+              tbody
+                tr
+                  td Status
+                  td Running
+                tr
+                  td Requests (OK)
+                  td #{ stats.requests.ok }
+                tr
+                  td Requests (FAIL)
+                  td #{ stats.requests.fail }
+                tr
+                  td Workers #
+                  td x

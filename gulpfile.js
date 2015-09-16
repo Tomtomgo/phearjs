@@ -5,7 +5,8 @@ var $logger = $.util.log;
 
 var paths = {
   phear: ['./src/phear.coffee' ],
-  scripts: ['./src/*.coffee', '!./src/phear.coffee' ]
+  scripts: ['./src/*.coffee', '!./src/phear.coffee' ],
+  views: ['./src/views/*']
 }
 
 gulp.task('coffee', function(done) {
@@ -24,8 +25,17 @@ gulp.task('coffee', function(done) {
 
 });
 
+gulp.task('views', function(done) {
+
+  gulp.src(paths.views)
+    .pipe(gulp.dest('./lib/views'))
+    .pipe($.size({showFiles: true}));
+
+});
+
 gulp.task('build', function(callback) {
   $run("coffee", callback);
+  $run("views", callback);
 });
 
 gulp.task('default', ['build']);

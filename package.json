@@ -3,19 +3,27 @@
   "version": "0.3.0",
   "homepage": "http://phear.io",
   "description": "Render any dynamic Javascript webpage to JSON with PhantomJS.",
-  "keywords": ["phearjs", "phantomjs", "seo", "prerender", "ajax", "data extraction"],
+  "keywords": [
+    "phearjs",
+    "phantomjs",
+    "seo",
+    "prerender",
+    "ajax",
+    "data extraction"
+  ],
   "author": {
     "name": "Tom Aizenberg"
   },
   "bugs": {
     "url": "https://github.com/Tomtomgo/phearjs/issues"
   },
-  "repository" : {
-    "type" : "git",
-    "url" : "https://github.com/Tomtomgo/phearjs.git"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Tomtomgo/phearjs.git"
   },
   "dependencies": {
     "express": "latest",
+    "jade": "^1.11.0",
     "memcached": "latest",
     "querystring": "latest",
     "request": "latest",

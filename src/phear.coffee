@@ -36,7 +36,10 @@ spawn = (n) ->
 # Express server running on http://localhost:port to handle fetch requests
 serve = (port) ->
   app = express()
-  app.use(favicon("assets/favicon.png")) # Favicons are important.
+  app.set('view engine', 'jade')
+  app.set('views', './lib/views')
+  app.use(express.static('assets'))
+  # app.use(favicon("assets/favicon.png")) # Favicons are important.
 
   app.get '/', (req, res) ->
     running_workers_count = get_running_workers().length
@@ -47,6 +50,9 @@ serve = (port) ->
       close_response("phear", "Service unavailable, maximum number of allowed connections reached.", res)
     else
       handle_request(req, res)
+
+  app.get '/status', (req, res) ->
+    res.render('status_page.jade', stats: mommy.stats)
 
   app.listen(port)
 
@@ -89,6 +95,7 @@ handle_request = (req, res) ->
       res.status(statusCode).send(body)
 
     res.end()
+    mommy.stats.requests.ok += 1
     active_request_handlers -= 1
 
   active_request_handlers += 1
@@ -167,6 +174,8 @@ close_response = (inst, status, response) ->
       reason: status
     )
   response.end()
+
+  mommy.stats.requests.fail += 1
   logger.info inst, "Ended process with status #{status.toUpperCase()}."
 
 # Count the number of request handler threads
@@ -251,6 +260,13 @@ mommy.handler_threads = 0
 
 # Count the number of active request handlers to prevent failures due to overloading.
 active_request_handlers = 0
+
+mommy.stats = {
+  requests: {
+    ok: 0,
+    fail: 0
+  }
+}
 
 # Actually start the service!
 spawn(config.workers)

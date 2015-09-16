@@ -28,7 +28,9 @@
   serve = function(port) {
     var app;
     app = express();
-    app.use(favicon("assets/favicon.png"));
+    app.set('view engine', 'jade');
+    app.set('views', './lib/views');
+    app.use(express["static"]('assets'));
     app.get('/', function(req, res) {
       var running_workers_count;
       running_workers_count = get_running_workers().length;
@@ -38,6 +40,11 @@
       } else {
         return handle_request(req, res);
       }
+    });
+    app.get('/status', function(req, res) {
+      return res.render('status_page.jade', {
+        stats: mommy.stats
+      });
     });
     app.listen(port);
     return logger.info("phear", "Phear started.");
@@ -74,6 +81,7 @@
         res.status(statusCode).send(body);
       }
       res.end();
+      mommy.stats.requests.ok += 1;
       return active_request_handlers -= 1;
     };
     active_request_handlers += 1;
@@ -167,6 +175,7 @@
       }));
     }
     response.end();
+    mommy.stats.requests.fail += 1;
     return logger.info(inst, "Ended process with status " + (status.toUpperCase()) + ".");
   };
 
@@ -258,6 +267,13 @@
   mommy.handler_threads = 0;
 
   active_request_handlers = 0;
+
+  mommy.stats = {
+    requests: {
+      ok: 0,
+      fail: 0
+    }
+  };
 
   spawn(config.workers);
 
