@@ -1,6 +1,6 @@
 #! /usr/bin/env node
 (function() {
-  var Config, Logger, Memcached, active_request_handlers, argv, close_response, config, do_with_random_worker, express, favicon, get_running_workers, handle_request, ip_allowed, logger, memcached, memcached_options, mode, mommy, next_thread_number, package_definition, request, respawn, serve, spawn, stop, tree_kill, url, workers;
+  var Config, Logger, Memcached, active_request_handlers, argv, close_response, config, do_with_random_worker, dot, express, favicon, get_running_workers, handle_request, ip_allowed, logger, memcached, memcached_options, mode, mommy, next_thread_number, package_definition, request, respawn, serve, spawn, stop, strftime, tree_kill, url, workers;
 
   spawn = function(n) {
     var _, i, j, len, results, worker_config;
@@ -36,12 +36,14 @@
       running_workers_count = get_running_workers().length;
       if (active_request_handlers >= running_workers_count * config.worker.max_connections) {
         res.statusCode = 503;
-        return close_response("phear", "Service unavailable, maximum number of allowed connections reached.", res);
+        return close_response("phear", "Service unavailable, maximum number of allowed connections reached.", res, true);
       } else {
         return handle_request(req, res);
       }
     });
     app.get('/status', function(req, res) {
+      mommy.stats.active_connections = active_request_handlers;
+      mommy.stats.requests.total = mommy.stats.requests.ok + mommy.stats.requests.fail + mommy.stats.requests.refuse;
       return res.render('status_page.jade', {
         stats: mommy.stats
       });
@@ -51,7 +53,7 @@
   };
 
   handle_request = function(req, res) {
-    var cache_key, cache_namespace, respond, thread_number;
+    var cache_key, cache_namespace, error1, respond, thread_number;
     thread_number = next_thread_number();
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
@@ -66,7 +68,7 @@
     if (req.query.headers != null) {
       try {
         JSON.parse(req.query.headers);
-      } catch (_error) {
+      } catch (error1) {
         res.statusCode = 400;
         return close_response("phear-" + thread_number, "Additional headers not properly formatted, e.g.: encodeURIComponent('{extra: \"Yes.\"}').", res);
       }
@@ -107,7 +109,7 @@
               'real-ip': req.headers['real-ip']
             }
           }, function(error, response, body) {
-            var ref1;
+            var error2, ref1;
             try {
               if (response.statusCode === 200) {
                 memcached.set(cache_key, body, config.cache_ttl, function() {
@@ -115,7 +117,7 @@
                 });
               }
               return respond(response.statusCode, body);
-            } catch (_error) {
+            } catch (error2) {
               res.statusCode = 500;
               close_response("phear-" + thread_number, "Request failed due to an internal server error.", res);
               if ((ref1 = worker.process.status) !== "stopping" && ref1 !== "stopped") {
@@ -165,7 +167,10 @@
     return results;
   };
 
-  close_response = function(inst, status, response) {
+  close_response = function(inst, status, response, refused) {
+    if (refused == null) {
+      refused = false;
+    }
     response.set("content-type", "application/json");
     logger.info(inst, "Ending process.");
     if ([400, 403, 500, 503].indexOf(response.statusCode) > -1) {
@@ -175,12 +180,16 @@
       }));
     }
     response.end();
-    mommy.stats.requests.fail += 1;
+    if (refused) {
+      mommy.stats.requests.refuse += 1;
+    } else {
+      mommy.stats.requests.fail += 1;
+    }
     return logger.info(inst, "Ended process with status " + (status.toUpperCase()) + ".");
   };
 
   next_thread_number = function() {
-    return mommy.handler_threads = mommy.handler_threads > 10000 ? 1 : mommy.handler_threads + 1;
+    return mommy.handler_thread_number = mommy.handler_thread_number > 10000 ? 1 : mommy.handler_thread_number + 1;
   };
 
   ip_allowed = function(ip) {
@@ -195,21 +204,25 @@
     });
   };
 
+  dot = require('dot-object');
+
   express = require('express');
-
-  respawn = require('respawn');
-
-  request = require('request');
-
-  url = require('url');
-
-  Memcached = require('memcached');
 
   favicon = require('serve-favicon');
 
-  tree_kill = require('tree-kill');
+  Memcached = require('memcached');
 
   package_definition = require('./package.json');
+
+  request = require('request');
+
+  respawn = require('respawn');
+
+  strftime = require('strftime');
+
+  tree_kill = require('tree-kill');
+
+  url = require('url');
 
   argv = require('yargs').usage('Parse dynamic webpages.\nUsage: $0').example('$0 -c', 'location of phear configuration file').alias('c', 'config').example('$0 -e', 'environment to run in.').alias('e', 'environment')["default"]({
     c: "./config/config.json",
@@ -268,15 +281,25 @@
 
   mommy = this;
 
-  mommy.handler_threads = 0;
+  mommy.handler_thread_number = 0;
 
   active_request_handlers = 0;
 
   mommy.stats = {
     requests: {
       ok: 0,
-      fail: 0
-    }
+      fail: 0,
+      refuse: 0,
+      total: 0
+    },
+    general: {
+      start_datetime: strftime("%Y-%m-%d %H:%M:%S (%z)"),
+      mode: mode,
+      version: package_definition.version,
+      config_file: argv.c,
+      port: config.base_port
+    },
+    config: dot.dot(config)
   };
 
   spawn(config.workers);

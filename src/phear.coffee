@@ -39,7 +39,6 @@ serve = (port) ->
   app.set('view engine', 'jade')
   app.set('views', './lib/views')
   app.use(express.static('assets'))
-  # app.use(favicon("assets/favicon.png")) # Favicons are important.
 
   app.get '/', (req, res) ->
     running_workers_count = get_running_workers().length
@@ -47,11 +46,14 @@ serve = (port) ->
     # Check that we aren't overserving our workers
     if active_request_handlers >= running_workers_count * config.worker.max_connections
       res.statusCode = 503
-      close_response("phear", "Service unavailable, maximum number of allowed connections reached.", res)
+      close_response("phear", "Service unavailable, maximum number of allowed connections reached.", res, true)
     else
       handle_request(req, res)
 
   app.get '/status', (req, res) ->
+    mommy.stats.active_connections = active_request_handlers
+    mommy.stats.requests.total = mommy.stats.requests.ok + mommy.stats.requests.fail + mommy.stats.requests.refuse
+
     res.render('status_page.jade', stats: mommy.stats)
 
   app.listen(port)
@@ -164,7 +166,7 @@ get_running_workers = ->
   (worker for worker in workers when worker.process.status is "running")
 
 # Prettily close a response
-close_response = (inst, status, response) ->
+close_response = (inst, status, response, refused=false) ->
   response.set "content-type", "application/json"
 
   logger.info inst, "Ending process."
@@ -175,12 +177,16 @@ close_response = (inst, status, response) ->
     )
   response.end()
 
-  mommy.stats.requests.fail += 1
+  if refused
+    mommy.stats.requests.refuse += 1
+  else
+    mommy.stats.requests.fail += 1
+
   logger.info inst, "Ended process with status #{status.toUpperCase()}."
 
 # Count the number of request handler threads
 next_thread_number = ->
-  mommy.handler_threads = if mommy.handler_threads > 10000 then 1 else mommy.handler_threads + 1
+  mommy.handler_thread_number = if mommy.handler_thread_number > 10000 then 1 else mommy.handler_thread_number + 1
 
 ip_allowed = (ip) ->
   config.worker.allowed_clients.indexOf(ip) isnt -1
@@ -196,14 +202,16 @@ stop = ->
 # -----------------
 
 # 3rd-party libs
+dot = require('dot-object')
 express = require('express')
-respawn = require('respawn')
-request = require('request')
-url = require('url')
-Memcached = require('memcached')
 favicon = require('serve-favicon')
-tree_kill = require('tree-kill');
+Memcached = require('memcached')
 package_definition = require('./package.json')
+request = require('request')
+respawn = require('respawn')
+strftime = require('strftime')
+tree_kill = require('tree-kill');
+url = require('url')
 
 argv = require('yargs')
     .usage('Parse dynamic webpages.\nUsage: $0')
@@ -258,7 +266,7 @@ logger.info "phear", "=================================="
 
 # Ssshhhh
 mommy = this
-mommy.handler_threads = 0
+mommy.handler_thread_number = 0
 
 # Count the number of active request handlers to prevent failures due to overloading.
 active_request_handlers = 0
@@ -266,8 +274,18 @@ active_request_handlers = 0
 mommy.stats = {
   requests: {
     ok: 0,
-    fail: 0
-  }
+    fail: 0,
+    refuse: 0,
+    total: 0
+  },
+  general: {
+    start_datetime: strftime("%Y-%m-%d %H:%M:%S (%z)"),
+    mode: mode,
+    version: package_definition.version,
+    config_file: argv.c,
+    port: config.base_port
+  },
+  config: dot.dot(config)
 }
 
 # Actually start the service!

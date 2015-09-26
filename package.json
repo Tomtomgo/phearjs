@@ -22,6 +22,7 @@
     "url": "https://github.com/Tomtomgo/phearjs.git"
   },
   "dependencies": {
+    "dot-object": "^1.2.0",
     "express": "latest",
     "jade": "^1.11.0",
     "memcached": "latest",
@@ -40,7 +41,6 @@
     "gulp-coffee": "latest",
     "gulp-insert": "latest",
     "gulp-load-plugins": "latest",
-    "gulp-run": "latest",
     "gulp-size": "latest",
     "gulp-util": "latest",
     "run-sequence": "latest"

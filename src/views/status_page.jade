@@ -8,29 +8,55 @@ html
     link(rel='stylesheet', type='text/css', href='mui.min.css')
     script(src='mui.min.js')
 
-    //- link(rel='stylesheet', type='text/css', href='phear.css')
   body
     .mui-container
       h1 PhearJS status
+
       .mui-panel
         .mui-row
-          .mui-col-md-4
 
           .mui-col-md-4
             table.mui-table
               thead
                 tr
-                  th(colspan=2) General stats
+                  th(colspan=2) General
               tbody
                 tr
-                  td Status
-                  td Running
+                  td Started
+                  td #{ stats.general.start_datetime }
                 tr
-                  td Requests (OK)
-                  td #{ stats.requests.ok }
+                  td Mode
+                  td #{ stats.general.mode }
                 tr
-                  td Requests (FAIL)
-                  td #{ stats.requests.fail }
+                  td Version
+                  td #{ stats.general.version }
                 tr
-                  td Workers #
-                  td x
+                  td Config
+                  td #{ stats.general.config_file }
+                tr
+                  td Port
+                  td #{ stats.general.port }
+
+          .mui-col-md-4
+            table.mui-table
+              thead
+                tr
+                  th(colspan=2) Requests
+              tbody
+                tr
+                  td
+                    b Total
+                  td
+                    b #{ stats.requests.total }
+                tr
+                  td Active
+                  td #{ stats.active_connections }
+                tr
+                  td Successful
+                  td #{ stats.requests.ok } (#{Math.round(100*(stats.requests.ok / stats.requests.total)) || 0}%)
+                tr
+                  td Failed
+                  td #{ stats.requests.fail } (#{Math.round(100*(stats.requests.fail / stats.requests.total)) || 0}%)
+                tr
+                  td Refused
+                  td #{ stats.requests.refuse } (#{Math.round(100*(stats.requests.refuse / stats.requests.total)) || 0}%)
