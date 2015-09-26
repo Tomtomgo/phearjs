@@ -15,7 +15,7 @@ spawn = (n) ->
 
     # Create worker object
     workers[i].process = respawn(["phantomjs",
-                                  "--load-images=no",
+                                  # "--load-images=no", # Due to an issue in QT a memory leak occurs with this. Re-enable when solved. Info: https://github.com/ariya/phantomjs/issues/12903.
                                   "--disk-cache=no",
                                   "--ignore-ssl-errors=yes",
                                   "--ssl-protocol=any",
@@ -203,6 +203,7 @@ url = require('url')
 Memcached = require('memcached')
 favicon = require('serve-favicon')
 tree_kill = require('tree-kill');
+package_definition = require('./package.json')
 
 argv = require('yargs')
     .usage('Parse dynamic webpages.\nUsage: $0')
@@ -248,6 +249,7 @@ process.on 'uncaughtException', (err) ->
 
 logger.info "phear", "Starting Phear..."
 logger.info "phear", "=================================="
+logger.info "phear", "Version: #{package_definition.version}"
 logger.info "phear", "Mode: #{mode}"
 logger.info "phear", "Config file: #{argv.c}"
 logger.info "phear", "Port: #{config.base_port}"
