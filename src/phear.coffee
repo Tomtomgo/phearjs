@@ -50,11 +50,20 @@ serve = (port) ->
     else
       handle_request(req, res)
 
-  app.get '/status', (req, res) ->
-    mommy.stats.active_connections = active_request_handlers
-    mommy.stats.requests.total = mommy.stats.requests.ok + mommy.stats.requests.fail + mommy.stats.requests.refuse
+  app.get '/status/:sub?', (req, res) ->
+    stats.requests.active = active_request_handlers
+    stats.workers = workers
 
-    res.render('status_page.jade', stats: mommy.stats)
+    allowed_routes = ['general', 'workers', 'config']
+
+    unless req.params.sub in allowed_routes
+      req.params.sub = 'general'
+
+    get_worker_states = req.params.sub == "workers"
+
+    # Fetch the stats and when we have 'em, show.
+    stats.get get_worker_states, ->
+      res.render("#{req.params.sub}.jade", stats: stats, sub: req.params.sub)
 
   app.listen(port)
 
@@ -97,7 +106,7 @@ handle_request = (req, res) ->
       res.status(statusCode).send(body)
 
     res.end()
-    mommy.stats.requests.ok += 1
+    stats.requests.ok += 1
     active_request_handlers -= 1
 
   active_request_handlers += 1
@@ -178,9 +187,9 @@ close_response = (inst, status, response, refused=false) ->
   response.end()
 
   if refused
-    mommy.stats.requests.refuse += 1
+    stats.requests.refuse += 1
   else
-    mommy.stats.requests.fail += 1
+    stats.requests.fail += 1
 
   logger.info inst, "Ended process with status #{status.toUpperCase()}."
 
@@ -202,14 +211,12 @@ stop = ->
 # -----------------
 
 # 3rd-party libs
-dot = require('dot-object')
 express = require('express')
 favicon = require('serve-favicon')
 Memcached = require('memcached')
 package_definition = require('./package.json')
 request = require('request')
 respawn = require('respawn')
-strftime = require('strftime')
 tree_kill = require('tree-kill');
 url = require('url')
 
@@ -225,6 +232,7 @@ argv = require('yargs')
 # My libs
 Logger = require("./lib/logger.js")
 Config = require("./lib/config.js")
+Stats = require("./lib/stats.js")
 
 # Set the mode depending on environment
 mode = argv.e
@@ -271,22 +279,13 @@ mommy.handler_thread_number = 0
 # Count the number of active request handlers to prevent failures due to overloading.
 active_request_handlers = 0
 
-mommy.stats = {
-  requests: {
-    ok: 0,
-    fail: 0,
-    refuse: 0,
-    total: 0
-  },
-  general: {
-    start_datetime: strftime("%Y-%m-%d %H:%M:%S (%z)"),
+stats = new Stats
+  general:
     mode: mode,
     version: package_definition.version,
     config_file: argv.c,
     port: config.base_port
-  },
-  config: dot.dot(config)
-}
+  config: config
 
 # Actually start the service!
 spawn(config.workers)

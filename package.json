@@ -22,9 +22,9 @@
     "url": "https://github.com/Tomtomgo/phearjs.git"
   },
   "dependencies": {
-    "dot-object": "^1.2.0",
+    "dot-object": "latest",
     "express": "latest",
-    "jade": "^1.11.0",
+    "jade": "latest",
     "memcached": "latest",
     "querystring": "latest",
     "request": "latest",
@@ -33,6 +33,7 @@
     "strftime": "latest",
     "tree-kill": "latest",
     "url": "latest",
+    "usage": "latest",
     "yargs": "latest"
   },
   "devDependencies": {

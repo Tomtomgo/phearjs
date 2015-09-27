@@ -1,0 +1,46 @@
+extends ./status.jade
+
+block content
+  .mui-col-md-5
+    table.mui-table(data-mui-borders="true")
+      thead
+        tr
+          th(colspan=2) General
+      tbody
+        tr
+          td Started
+          td #{ stats.general.start_datetime }
+        tr
+          td Mode
+          td #{ stats.general.mode }
+        tr
+          td Version
+          td #{ stats.general.version }
+        tr
+          td Config
+          td #{ stats.general.config_file }
+        tr
+          td Port
+          td #{ stats.general.port }
+
+  .mui-col-md-5
+    table.mui-table
+      thead
+        tr
+          th(colspan=2) Requests
+      tbody
+        tr
+          td Total
+          td #{ stats.requests.total }
+        tr
+          td Active
+          td #{ stats.requests.active }
+        tr
+          td Successful
+          td #{ stats.requests.ok } (#{Math.round(100*(stats.requests.ok / stats.requests.total)) || 0}%)
+        tr
+          td Failed
+          td #{ stats.requests.fail } (#{Math.round(100*(stats.requests.fail / stats.requests.total)) || 0}%)
+        tr
+          td Refused
+          td #{ stats.requests.refuse } (#{Math.round(100*(stats.requests.refuse / stats.requests.total)) || 0}%)

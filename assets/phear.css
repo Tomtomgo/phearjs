@@ -1,0 +1,35 @@
+body {
+  font-family: 'Source Sans Pro', sans-serif;
+}
+
+.mui-panel {
+  box-shadow: none;
+  border-left: 1px solid rgb(221, 221, 221);
+}
+
+.mui-table td, .mui-table th {
+  padding: 14px 7px 14px 7px !important;
+  border-bottom: 1px solid rgb(221, 221, 221) !important;
+}
+
+.mui-table th {
+  font-size: 16px !important;
+  /*text-transform: uppercase;*/
+  font-weight: normal !important;
+  background-color: rgba(21, 136, 157, 1);
+  color: #fff;
+  border: none !important;
+}
+
+.vertical li {
+  display: block;
+}
+
+.vertical a {
+  padding-left: 7px !important;
+}
+
+.vertical a:hover {
+  font-weight: bold !important;
+  cursor: pointer !important;
+}

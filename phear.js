@@ -1,6 +1,7 @@
 #! /usr/bin/env node
 (function() {
-  var Config, Logger, Memcached, active_request_handlers, argv, close_response, config, do_with_random_worker, dot, express, favicon, get_running_workers, handle_request, ip_allowed, logger, memcached, memcached_options, mode, mommy, next_thread_number, package_definition, request, respawn, serve, spawn, stop, strftime, tree_kill, url, workers;
+  var Config, Logger, Memcached, Stats, active_request_handlers, argv, close_response, config, do_with_random_worker, express, favicon, get_running_workers, handle_request, ip_allowed, logger, memcached, memcached_options, mode, mommy, next_thread_number, package_definition, request, respawn, serve, spawn, stats, stop, tree_kill, url, workers,
+    indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
   spawn = function(n) {
     var _, i, j, len, results, worker_config;
@@ -41,11 +42,20 @@
         return handle_request(req, res);
       }
     });
-    app.get('/status', function(req, res) {
-      mommy.stats.active_connections = active_request_handlers;
-      mommy.stats.requests.total = mommy.stats.requests.ok + mommy.stats.requests.fail + mommy.stats.requests.refuse;
-      return res.render('status_page.jade', {
-        stats: mommy.stats
+    app.get('/status/:sub?', function(req, res) {
+      var allowed_routes, get_worker_states, ref;
+      stats.requests.active = active_request_handlers;
+      stats.workers = workers;
+      allowed_routes = ['general', 'workers', 'config'];
+      if (ref = req.params.sub, indexOf.call(allowed_routes, ref) < 0) {
+        req.params.sub = 'general';
+      }
+      get_worker_states = req.params.sub === "workers";
+      return stats.get(get_worker_states, function() {
+        return res.render(req.params.sub + ".jade", {
+          stats: stats,
+          sub: req.params.sub
+        });
       });
     });
     app.listen(port);
@@ -83,7 +93,7 @@
         res.status(statusCode).send(body);
       }
       res.end();
-      mommy.stats.requests.ok += 1;
+      stats.requests.ok += 1;
       return active_request_handlers -= 1;
     };
     active_request_handlers += 1;
@@ -181,9 +191,9 @@
     }
     response.end();
     if (refused) {
-      mommy.stats.requests.refuse += 1;
+      stats.requests.refuse += 1;
     } else {
-      mommy.stats.requests.fail += 1;
+      stats.requests.fail += 1;
     }
     return logger.info(inst, "Ended process with status " + (status.toUpperCase()) + ".");
   };
@@ -204,8 +214,6 @@
     });
   };
 
-  dot = require('dot-object');
-
   express = require('express');
 
   favicon = require('serve-favicon');
@@ -217,8 +225,6 @@
   request = require('request');
 
   respawn = require('respawn');
-
-  strftime = require('strftime');
 
   tree_kill = require('tree-kill');
 
@@ -232,6 +238,8 @@
   Logger = require("./lib/logger.js");
 
   Config = require("./lib/config.js");
+
+  Stats = require("./lib/stats.js");
 
   mode = argv.e;
 
@@ -285,22 +293,15 @@
 
   active_request_handlers = 0;
 
-  mommy.stats = {
-    requests: {
-      ok: 0,
-      fail: 0,
-      refuse: 0,
-      total: 0
-    },
+  stats = new Stats({
     general: {
-      start_datetime: strftime("%Y-%m-%d %H:%M:%S (%z)"),
       mode: mode,
       version: package_definition.version,
       config_file: argv.c,
       port: config.base_port
     },
-    config: dot.dot(config)
-  };
+    config: config
+  });
 
   spawn(config.workers);
 

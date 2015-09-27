@@ -1,0 +1,16 @@
+extends ./status.jade
+
+block content
+  .mui-col-md-10
+    table.mui-table
+      thead
+        tr
+          th(colspan=2) Config
+      tbody
+        tr
+          td File
+          td #{ stats.general.config_file }
+        each value, key in stats.config
+          tr
+            td #{ key }
+            td #{ value }
