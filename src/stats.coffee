@@ -27,15 +27,16 @@ class Stats
 
     if options.config?
       @config = dot.dot options.config
-      @config['status_page.pass'] = "************" if @config['status_page.pass']?
+      if @config['status_page.pass']?
+        @config['status_page.pass'] = "************"
     else
       @config = undefined
 
     @workers = {}
 
-  # Stats#get will fetch for each running worker the current system resource usage.
-  # Because this lookup is async, we wait until all reports are fetched. Then we can run
-  # the callback.
+  # Stats#get will fetch for each running worker the current system resource
+  # usage. Because this lookup is async, we wait until all reports are fetched.
+  # Then we can run the callback.
   get: (get_worker_states, callback) ->
     @requests.total = @requests.ok + @requests.fail + @requests.refuse
 
@@ -54,7 +55,7 @@ class Stats
                 cpu: undefined
             else
               @workers[i].usage =
-                memory: Math.round(100 * res.memoryInfo.rss / 1024 / 1024) / 100,
+                memory: Math.round(100 * res.memoryInfo.rss / 1024 / 1024) / 100
                 cpu: Math.round(100 * res.cpu) / 100
 
             if lookups_to_complete <= 0

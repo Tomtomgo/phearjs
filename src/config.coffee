@@ -1,7 +1,7 @@
 #
 # config
 # -------------
-# 
+#
 # Parses a config file.
 #
 
