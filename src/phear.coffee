@@ -46,16 +46,28 @@ serve = (port) ->
     # Check that we aren't overserving our workers
     if active_request_handlers >= running_workers_count * config.worker.max_connections
       res.statusCode = 503
-      close_response("phear", "Service unavailable, maximum number of allowed connections reached.", res, true)
+      return close_response("phear", "Service unavailable, maximum number of allowed connections reached.", res, true)
     else
       handle_request(req, res)
 
   app.get '/status/:sub?', (req, res) ->
+    # For non-development environments we check if the status page is enabled and then the
+    # basic auth credentials
+    if mode != "development"
+      if config.status_page?.enabled
+        user = basic_auth req
+        if user?.pass != config.status_page.pass or user?.name != config.status_page.name
+          res.statusCode = 401
+          res.header('WWW-Authenticate', 'Basic realm=\nUsername and password please.')
+          return res.end()
+      else
+        res.statusCode = 403
+        return close_response("phear", "Forbidden.", res, true)
+
     stats.requests.active = active_request_handlers
     stats.workers = workers
 
     allowed_routes = ['general', 'workers', 'config']
-
     unless req.params.sub in allowed_routes
       req.params.sub = 'general'
 
@@ -211,8 +223,8 @@ stop = ->
 # -----------------
 
 # 3rd-party libs
+basic_auth = require('basic-auth')
 express = require('express')
-favicon = require('serve-favicon')
 Memcached = require('memcached')
 package_definition = require('./package.json')
 request = require('request')

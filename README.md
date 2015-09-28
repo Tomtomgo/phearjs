@@ -1,13 +1,12 @@
-![PhearJS](http://d3jtdrwnfjguwh.cloudfront.net/logo-red.svg)
+![PhearJS](http://d3jtdrwnfjguwh.cloudfront.net/logo-red.svg) (0.4.0)
 
+PhearJS renders webpages. It runs a server which supervises a set number of PhantomJS workers that do the actual parsing and evaluation.
 
-PhearJS is a service that parses and evaluates (dynamic) webpages. It runs a server which supervises a set number of PhantomJS workers that do the actual parsing and evaluation.
+Many websites rely on AJAX and front-end rendering. When a *machine* requests a page from such a website it sees a completely different page than you would see when viewing it in a browser.
 
-Many websites rely on AJAX and front-end rendering. When a *machine* requests a page from such a website it gets a completely different page than you would when viewing it in a browser. 
+This is a problem when you want to scrape such a website or create a static copy of your dynamic site for data mining or SEO purposes. PhearJS helps you with this, by rendering pages in a headless [PhantomJS](http://phantomjs.org/) browser and returning a JSON containing the rendered page and meta data about the response.
 
-This is a problem when you want to scrape such a website or create a static copy of your dynamic site for SEO purposes. PhearJS helps you with this, by rendering pages in a headless [PhantomJS](http://phantomjs.org/) browser and returning a JSON containing the rendered page and meta data about the response.
-
-PhearJS was built and tested on Ubuntu 14.04, but should work on most Linux distributions. OSX reportedly works fine as well, though the installation instructions don't apply here. Proper installation instructions for OSX are [very welcome](#contributing).
+PhearJS was built and tested on Ubuntu 15.04, but should work on most Linux distributions. OSX reportedly works fine as well.
 
 For a hosted API of PhearJS check out [phear.io](http://phear.io).
 
@@ -42,9 +41,15 @@ curl -X GET "http://localhost:8100? \
 }
 ```
 
+## Installation, set-up and running
+
+Check out [these instructions](INSTALLATION.md).
+
 ## Usage
 
-Requests can be made to http://localhost:8100?fetch_url=http%3A%2F%2Fdomain.com in development mode or http://<PHEAR_IP>:<PHEAR_PORT>?fetch_url=http%3A%2F%2Fdomain.com in production mode.
+Requests can be made to:
+
+`http://localhost:8100?fetch_url=http%3A%2F%2Fdomain.com`
 
 PhearJS accepts the following parameters:
 
@@ -52,47 +57,49 @@ PhearJS accepts the following parameters:
   The URL to fetch, encoded as it would be by e.g. encodeURIComponent().
 
 - **parse_delay**=<*milliseconds*\>
-  Amount of milliseconds to wait (allow scripts to run) before returning.
+  Time to wait before returning, allowing scripts and AJAX calls to run.
   Default: *as set in config.json*.
 
-- **force**=[*true*|*1*]
+- **force**=[*false*|*true*]
   Force a cache refresh.
   Default: *false*.
 
-- **raw**=[*true*|*1*]
+- **raw**=[*false*|*true*]
   Return the raw body instead of a JSON.
   Default: *false*.
 
-- **headers**=*URL-encoded JSON*
+- **headers**=<*URL-encoded JSON*\>
   Add additional headers to the request.
   Default: *{}*.
 
-- **cache_namespace**=*string*
+- **cache_namespace**=<*string*\>
   A namespace to use on the cache. Can be useful for multi-client settings.
   Default: *global-*.
 
-## Installation, set-up and running
+### Status page
 
-Check out [these instructions](INSTALLATION.md).
+When PhearJS is running you can find a status page at `http://localhost:8100/status`. It
+shows some stats about the running process. In production this status page should be enabled
+via `config.json` and is password-protected through Basic Auth.
 
 ## Related projects
 
 * [phearjs-express](https://github.com/Tomtomgo/phearjs-express): An Express middleware to serve prerendered pages to bots and search engines.
 
+## Issues
+
+If any issues may occur, please create a GitHub issue. This will help using PhearJS. Even
+better: contribute! (keep reading... ;))
+
 ## Contributing
 
 Contributions are always welcome!
-
-Currently what would be great to have:
-
-- Verifying OSX install instructions
-- Automated tests
 
 In any case make sure:
 
 1. Open an issue in this repository.
 2. Fork the project.
-3. Fix or create.
+3. Do the codes.
 4. Build with `gulp build`.
 5. Update these docs if applicable.
 6. Make a pull request referencing the issue.

@@ -25,7 +25,11 @@ class Stats
       config_file: options?.general?.config_file or undefined,
       port: options?.general?.port or undefined
 
-    @config = if options.config? then dot.dot options.config else undefined
+    if options.config?
+      @config = dot.dot options.config
+      @config['status_page.pass'] = "************" if @config['status_page.pass']?
+    else
+      @config = undefined
 
     @workers = {}
 

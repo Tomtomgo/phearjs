@@ -1,6 +1,6 @@
 #! /usr/bin/env node
 (function() {
-  var Config, Logger, Memcached, Stats, active_request_handlers, argv, close_response, config, do_with_random_worker, express, favicon, get_running_workers, handle_request, ip_allowed, logger, memcached, memcached_options, mode, mommy, next_thread_number, package_definition, request, respawn, serve, spawn, stats, stop, tree_kill, url, workers,
+  var Config, Logger, Memcached, Stats, active_request_handlers, argv, basic_auth, close_response, config, do_with_random_worker, express, get_running_workers, handle_request, ip_allowed, logger, memcached, memcached_options, mode, mommy, next_thread_number, package_definition, request, respawn, serve, spawn, stats, stop, tree_kill, url, workers,
     indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
   spawn = function(n) {
@@ -43,11 +43,24 @@
       }
     });
     app.get('/status/:sub?', function(req, res) {
-      var allowed_routes, get_worker_states, ref;
+      var allowed_routes, get_worker_states, ref, ref1, user;
+      if (mode !== "development") {
+        if ((ref = config.status_page) != null ? ref.enabled : void 0) {
+          user = basic_auth(req);
+          if ((user != null ? user.pass : void 0) !== config.status_page.pass || (user != null ? user.name : void 0) !== config.status_page.name) {
+            res.statusCode = 401;
+            res.header('WWW-Authenticate', 'Basic realm=\nUsername and password please.');
+            return res.end();
+          }
+        } else {
+          res.statusCode = 403;
+          return close_response("phear", "Forbidden.", res, true);
+        }
+      }
       stats.requests.active = active_request_handlers;
       stats.workers = workers;
       allowed_routes = ['general', 'workers', 'config'];
-      if (ref = req.params.sub, indexOf.call(allowed_routes, ref) < 0) {
+      if (ref1 = req.params.sub, indexOf.call(allowed_routes, ref1) < 0) {
         req.params.sub = 'general';
       }
       get_worker_states = req.params.sub === "workers";
@@ -214,9 +227,9 @@
     });
   };
 
-  express = require('express');
+  basic_auth = require('basic-auth');
 
-  favicon = require('serve-favicon');
+  express = require('express');
 
   Memcached = require('memcached');
 

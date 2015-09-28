@@ -15,7 +15,7 @@
         "port": 8183,
         "timeout": 10000,
         "parse_delay": 5000,
-        "user_agent": "PhearBot/0.3.0 - http://phear.io",
+        "user_agent": "PhearBot/0.4.0 - http://phear.io",
         "max_connections": 10
       }
     },
@@ -23,6 +23,11 @@
       "workers": 6,
       "base_port": 9100,
       "cache_ttl": 604800,
+      "status_page": {
+        "enabled": false,
+        "name": "user",
+        "pass": "pick_a_password"
+      },
       "memcached": {
         "servers": ["localhost:11211"],
         "options": {
@@ -34,7 +39,7 @@
         "port": 8183,
         "timeout": 10000,
         "parse_delay": 5000,
-        "user_agent": "PhearBot/0.3.0 - http://phear.io",
+        "user_agent": "PhearBot/0.4.0 - http://phear.io",
         "max_connections": 10,
         "allowed_clients": ["127.0.0.1"]
       }

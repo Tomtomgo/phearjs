@@ -1,6 +1,6 @@
 {
   "name": "phearjs",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "homepage": "http://phear.io",
   "description": "Render any dynamic Javascript webpage to JSON with PhantomJS.",
   "keywords": [
@@ -22,6 +22,7 @@
     "url": "https://github.com/Tomtomgo/phearjs.git"
   },
   "dependencies": {
+    "basic-auth": "latest",
     "dot-object": "latest",
     "express": "latest",
     "jade": "latest",
