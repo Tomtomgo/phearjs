@@ -1,4 +1,4 @@
-![PhearJS](http://d3jtdrwnfjguwh.cloudfront.net/logo-red.svg) (0.4.0)
+![PhearJS](http://d3jtdrwnfjguwh.cloudfront.net/logo-red.svg) (0.4.1)
 
 PhearJS renders webpages. It runs a server which supervises a set number of PhantomJS workers that do the actual parsing and evaluation.
 
