@@ -119,20 +119,22 @@
       var ref;
       if ((error != null) || (data == null) || ((ref = req.query.force) === "true" || ref === "1")) {
         return do_with_random_worker(thread_number, function(worker) {
-          var worker_request_url;
+          var options, worker_request_url;
           worker_request_url = url.format({
             protocol: "http",
             hostname: "localhost",
             port: worker.port,
             query: req.query
           });
-          return request({
+          options = {
             url: worker_request_url,
             headers: {
               'real-ip': req.headers['real-ip']
-            }
-          }, function(error, response, body) {
-            var error2, ref1;
+            },
+            timeout: config.global_timeout
+          };
+          return request(options, function(error, response, body) {
+            var err, error2, ref1;
             try {
               if (response.statusCode === 200) {
                 memcached.set(cache_key, body, config.cache_ttl, function() {
@@ -141,6 +143,7 @@
               }
               return respond(response.statusCode, body);
             } catch (error2) {
+              err = error2;
               res.statusCode = 500;
               close_response("phear-" + thread_number, "Request failed due to an internal server error.", res);
               if ((ref1 = worker.process.status) !== "stopping" && ref1 !== "stopped") {

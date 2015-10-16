@@ -135,12 +135,10 @@ fetch_url = (url, response, this_inst, parse_delay, request_headers) ->
       page_inst.close()
     else
       logger.info this_inst, "Fetched #{url} parsing with a parse_delay of #{parse_delay} ms."
-      response.statusCode = 200
       fetch_url_headers = {}
 
       # Add the headers to the response!
       for i of headers[final_url]
-
         # We make the keys lowercase, HTTP header keys are case-insensitive. (http://stackoverflow.com/questions/5258977/are-http-headers-case-sensitive)
         fetch_url_headers[headers[final_url][i]["name"].toLowerCase()] = headers[final_url][i]["value"]
 
@@ -148,6 +146,19 @@ fetch_url = (url, response, this_inst, parse_delay, request_headers) ->
 
       # The page was requested, now we give PhantomJS parse_delay milliseconds to evaluate the page
       page_inst.parse_wait = setTimeout (->
+
+        # In rare cases PhantomJS erroneously garbage collects the page object
+        if not page_inst?.hasOwnProperty('content')
+          response.statusCode = 500
+          close_response this_inst, "Rendering #{url} failed.", response
+
+          if page_inst?
+            logger.info this_inst, "Closed page instance."
+            page_inst.close()
+
+          return
+
+        response.statusCode = 200
         response.write JSON.stringify(
           success: true
           input_url: url

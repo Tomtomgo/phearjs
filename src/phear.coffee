@@ -144,8 +144,10 @@ handle_request = (req, res) ->
           query: req.query
         }
 
+        options = {url: worker_request_url, headers: {'real-ip': req.headers['real-ip']}, timeout: config.global_timeout}
+
         # Make the request to the worker and store in cache if status is 200 (don't store bad requests)
-        request {url: worker_request_url, headers: {'real-ip': req.headers['real-ip']}}, (error, response, body) ->
+        request options, (error, response, body) ->
           try
             if response.statusCode == 200
               memcached.set cache_key, body, config.cache_ttl, ->
@@ -153,7 +155,7 @@ handle_request = (req, res) ->
 
             # Return to requester!
             respond(response.statusCode, body)
-          catch
+          catch err
             res.statusCode = 500
             close_response("phear-#{thread_number}", "Request failed due to an internal server error.", res)
 

@@ -1,5 +1,12 @@
 # Changelog
 
+### 0.4.1 (16-10-2015)
+
+Thanks to @falhashimi for amazing feedback on PhearJS in a production environment.
+
+Catch persistent 100% CPU consumption by PhantomJS after continuous high load
+Catch rare Qt garbage collection issue
+
 ### 0.4.0 (28-09-2015)
 
 Added a status page
