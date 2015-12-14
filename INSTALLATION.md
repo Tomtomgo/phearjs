@@ -6,7 +6,7 @@
 - Then install PhearJS:
 
 ```bash
-git clone git@github.com:Tomtomgo/phearjs.git
+git clone https://github.com/Tomtomgo/phearjs.git
 cd phearjs
 npm install
 ```
