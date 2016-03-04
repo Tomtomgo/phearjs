@@ -1,12 +1,12 @@
 # Installation
 
-- You need NodeJS, if you don't have it: [install NodeJS](http://nodejs.org/download/).
+- You need NodeJS, if you don't have it: [install NodeJS](https://nodejs.org/en/download/).
 - You need PhantomJS 2 or higher, if you don't have it: [install PhantomJS](http://phantomjs.org/download.html).
-- You need Memcached, if you don't have it: [install Memcached](https://code.google.com/p/memcached/wiki/NewInstallFromPackage).
+- You need Memcached, if you don't have it: `apt-get install memcached`.
 - Then install PhearJS:
 
 ```bash
-git clone git@github.com:Tomtomgo/phearjs.git
+git clone https://github.com/Tomtomgo/phearjs.git
 cd phearjs
 npm install
 ```
