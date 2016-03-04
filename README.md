@@ -8,8 +8,6 @@ This is a problem when you want to scrape such a website or create a static copy
 
 PhearJS was built and tested on Ubuntu 15.04, but should work on most Linux distributions. OSX reportedly works fine as well.
 
-For a hosted API of PhearJS check out [phear.io](http://phear.io).
-
 ## Example
 
 ### Request
