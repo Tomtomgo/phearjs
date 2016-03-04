@@ -1,5 +1,12 @@
 # Changelog
 
+### 0.5.0 (04-03-2016)
+
+Thanks to @andersju:
+
+Option to add requests made by webpage to result
+Option to add cookies created by webpage to result
+
 ### 0.4.1 (16-10-2015)
 
 Thanks to @falhashimi for amazing feedback on PhearJS in a production environment.
