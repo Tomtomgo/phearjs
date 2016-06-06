@@ -90,6 +90,7 @@ via `config.json` and is password-protected through Basic Auth.
 
 ## Related projects
 
+* [phearb](https://github.com/joaquinrulin/phearb): A Ruby gem for simplifying connection to Phear servers.
 * [phearjs-express](https://github.com/Tomtomgo/phearjs-express): An Express middleware to serve prerendered pages to bots and search engines.
 
 ## Issues
