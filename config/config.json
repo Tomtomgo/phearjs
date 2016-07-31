@@ -19,7 +19,15 @@
         "user_agent": "PhearBot/0.4.1 - http://phear.io",
         "max_connections": 10,
         "get_requests": false,
-        "get_cookies": false
+        "get_cookies": false,
+        "viewport_width": 960,
+        "viewport_height": 540,
+        "as_image": false,
+        "as_image_config": {
+          "format": "PNG",
+          "quality": 75,
+          "path": "screenshots/"
+        }
       }
     },
     "production": {
@@ -47,7 +55,15 @@
         "max_connections": 10,
         "allowed_clients": ["127.0.0.1"],
         "get_requests": false,
-        "get_cookies": false
+        "get_cookies": false,
+        "viewport_width": 960,
+        "viewport_height": 540,
+        "as_image": false,
+        "as_image_config": {
+          "format": "PNG",
+          "quality": 75,
+          "path": "screenshots/"
+        }
       }
     }
   }

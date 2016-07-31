@@ -52,6 +52,14 @@ run_server = ->
     # Check whether cookies should be included in JSON
     get_cookies = request_url.query?.get_cookies or config.get_cookies
 
+    # Check for rendering images
+    as_image = request_url.query?.as_image or config.as_image
+    as_image_config = config.as_image_config
+
+    # Check width and heigth
+    viewport_width = request_url.query?.viewport_width or config.viewport_width
+    viewport_height = request_url.query?.viewport_height or config.viewport_height
+
     # Parse optional headers
     request_headers = {}
     if request_url.query.headers?
@@ -65,7 +73,7 @@ run_server = ->
 
     try
       #Get the page
-      fetch_url escaped_fetch_url, response, this_inst, parse_delay, request_headers, get_requests, get_cookies
+      fetch_url escaped_fetch_url, response, this_inst, parse_delay, request_headers, get_requests, get_cookies, as_image, as_image_config, viewport_width, viewport_height
     catch err
       response.statusCode = 500
       return close_response(this_inst, "Error on fetching.", response)
@@ -74,7 +82,7 @@ run_server = ->
   logger.info "worker", "Running PhantomJS worker." if service
 
 # Fetch and parse a page
-fetch_url = (url, response, this_inst, parse_delay, request_headers, get_requests, get_cookies) ->
+fetch_url = (url, response, this_inst, parse_delay, request_headers, get_requests, get_cookies, as_image, as_image_config, viewport_width, viewport_height) ->
   final_url = url # store a final URL for redirects
   headers = {} # store response headers
   requests = [] # store requests made
@@ -141,6 +149,11 @@ fetch_url = (url, response, this_inst, parse_delay, request_headers, get_request
   # Create an instance of PhantomJS's webpage (the actual fetching and parsing happens here)
   page_inst.open url, (status) ->
 
+    page_inst.viewportSize = {
+      width: viewport_width,
+      height: viewport_height
+    }
+
     # Prevent double execution
     if done then return true else done = true
 
@@ -177,6 +190,18 @@ fetch_url = (url, response, this_inst, parse_delay, request_headers, get_request
 
           return
 
+        if as_image
+          iso_date = new Date().toISOString()
+          path_to_image = "
+            #{as_image_config.path}#{iso_date.substr(0, 10)}/#{iso_date.substr(11, 12)}
+            -
+            #{Math.random().toString(36).substring(2, 7)}.#{as_image_config.format}
+          "
+          page_inst.render(path_to_image, {
+            format: as_image_config.format,
+            quality: as_image_config.quality
+          })
+
         response.statusCode = 200
         response.write JSON.stringify(
           success: true
@@ -188,6 +213,7 @@ fetch_url = (url, response, this_inst, parse_delay, request_headers, get_request
           cookies: cookie_inst.cookies if get_cookies in ["true", "1"]
           had_js_errors: had_js_errors
           content: strip_scripts(page_inst.content)
+          rendered: path_to_image
         )
         close_response this_inst, status, response
         page_inst.close()

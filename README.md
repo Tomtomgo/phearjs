@@ -81,7 +81,30 @@ PhearJS accepts the following parameters:
 - **cache_namespace**=<*string*\>
   A namespace to use on the cache. Can be useful for multi-client settings.
   Default: *global-*.
-
+  
+- **viewport_width**=<*number*\>
+  Width in pixels. Default: 960
+  
+- **viewport_height**=<*number*\>
+  height in pixels. Default: 540
+  
+- **as_image**=[*false*|*true*]
+  Include `rendered` field to the response with the path to saved screenshot of the page.
+  Format, quality, path to save the screenshot can be set in `as_image_config`.
+  
+  ```
+        "as_image_config": {
+          "format": "PNG", // PNG and JPEG are recommended among others. 
+          "quality": 75, // details: http://phantomjs.org/api/webpage/method/render.html
+          "path": "screenshots/"
+        }
+  ```
+  
+  Images are saved by phantomJS on day-by-day basis with some unique names as: `screenshots/2016-07-31/01:05:25.116-c5fsf.PNG`
+  
+  Image rendering is not perfect. Just try `http://localhost:8100/?fetch_url=http://phantomjs.org&as_image=true` 
+  to see possible defects. Default: *false*.
+  
 ### Status page
 
 When PhearJS is running you can find a status page at `http://localhost:8100/status`. It
