@@ -29,7 +29,7 @@
   serve = function(port) {
     var app;
     app = express();
-    app.set('view engine', 'jade');
+    app.set('view engine', 'pug');
     app.set('views', './lib/views');
     app.use(express["static"]('assets'));
     app.get('/', function(req, res) {
@@ -65,7 +65,7 @@
       }
       get_worker_states = req.params.sub === "workers";
       return stats.get(get_worker_states, function() {
-        return res.render(req.params.sub + ".jade", {
+        return res.render(req.params.sub + ".pug", {
           stats: stats,
           sub: req.params.sub
         });

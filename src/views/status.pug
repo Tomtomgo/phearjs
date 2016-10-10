@@ -1,0 +1,30 @@
+doctype html
+html
+  head
+    meta(charset='utf-8')
+    meta(http-equiv='X-UA-Compatible', content='IE=edge')
+    meta(name='viewport', content='width=device-width, initial-scale=1')
+
+    link(href='http://fonts.googleapis.com/css?family=Source+Sans+Pro:400,700,400italic,700italic|Inconsolata:400,700&amp;subset=latin,latin-ext', rel='stylesheet', type='text/css')
+    link(rel='stylesheet', type='text/css', href='/mui.min.css')
+    link(rel='stylesheet', type='text/css', href='/phear.css')
+
+  body
+    .mui-container
+      h1 PhearJS status
+
+      .mui-panel
+        .mui-row
+          .mui-col-md-2
+            ul.mui-tabs.vertical
+              li(class=sub == "general" ? "mui-active" : "")
+                a(href="/status") General
+              li(class=sub == "config" ? "mui-active" : "")
+                a(href="/status/config") Config
+              li(class=sub == "workers" ? "mui-active" : "")
+                a(href="/status/workers") Workers
+
+          .mui-col-md-10.mui-tab-content
+            block content
+
+    script(src='/mui.min.js')

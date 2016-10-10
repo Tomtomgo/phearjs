@@ -1,0 +1,28 @@
+extends ./status.pug
+
+block content
+  each worker, i in stats.workers
+    .mui-col-md-5
+      table.mui-table
+        thead
+          tr
+            th(colspan=2) Worker ##{ 1 + i }
+        tbody
+          tr
+            td Status
+            td #{ worker.process.status }
+          tr
+            td Started
+            td #{ worker.process.started }
+          tr
+            td PID
+            td #{ worker.process.pid }
+          tr
+            td Port
+            td #{ worker.port }
+          tr
+            td RAM
+            td #{ worker.usage.memory } mb
+          tr
+            td CPU
+            td #{ worker.usage.cpu } %

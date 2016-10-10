@@ -1,5 +1,17 @@
 # Changelog
 
+### 0.6.1 (10-10-2016)
+
+Changed Jade dependency to Pug
+
+### 0.6.0 (10-10-2016)
+
+Thanks to @ITsvetkoFF:
+
+Added image rendering option
+
+Option to add requests made by webpage to result
+
 ### 0.5.0 (04-03-2016)
 
 Thanks to @andersju:

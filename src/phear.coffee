@@ -36,7 +36,7 @@ spawn = (n) ->
 # Express server running on http://localhost:port to handle fetch requests
 serve = (port) ->
   app = express()
-  app.set('view engine', 'jade')
+  app.set('view engine', 'pug')
   app.set('views', './lib/views')
   app.use(express.static('assets'))
 
@@ -75,7 +75,7 @@ serve = (port) ->
 
     # Fetch the stats and when we have 'em, show.
     stats.get get_worker_states, ->
-      res.render("#{req.params.sub}.jade", stats: stats, sub: req.params.sub)
+      res.render("#{req.params.sub}.pug", stats: stats, sub: req.params.sub)
 
   app.listen(port)
 
