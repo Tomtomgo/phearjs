@@ -53,7 +53,7 @@ run_server = ->
     get_cookies = request_url.query?.get_cookies or config.get_cookies
 
     # Check for rendering images
-    as_image = request_url.query?.as_image or config.as_image
+    as_image = request_url.query?.as_image in ["true", "1"] or config.as_image
     as_image_config = config.as_image_config
 
     # Check width and heigth
@@ -149,11 +149,6 @@ fetch_url = (url, response, this_inst, parse_delay, request_headers, get_request
   # Create an instance of PhantomJS's webpage (the actual fetching and parsing happens here)
   page_inst.open url, (status) ->
 
-    page_inst.viewportSize = {
-      width: viewport_width,
-      height: viewport_height
-    }
-
     # Prevent double execution
     if done then return true else done = true
 
@@ -191,6 +186,10 @@ fetch_url = (url, response, this_inst, parse_delay, request_headers, get_request
           return
 
         if as_image
+          page_inst.viewportSize = {
+            width: viewport_width,
+            height: viewport_height
+          }
           iso_date = new Date().toISOString()
           path_to_image = "
             #{as_image_config.path}#{iso_date.substr(0, 10)}/#{iso_date.substr(11, 12)}
@@ -213,7 +212,7 @@ fetch_url = (url, response, this_inst, parse_delay, request_headers, get_request
           cookies: cookie_inst.cookies if get_cookies in ["true", "1"]
           had_js_errors: had_js_errors
           content: strip_scripts(page_inst.content)
-          rendered: path_to_image
+          rendered: path_to_image if as_image
         )
         close_response this_inst, status, response
         page_inst.close()

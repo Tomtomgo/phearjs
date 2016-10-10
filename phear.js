@@ -76,7 +76,7 @@
   };
 
   handle_request = function(req, res) {
-    var cache_key, cache_namespace, error1, respond, thread_number;
+    var cache_key, cache_namespace, respond, thread_number;
     thread_number = next_thread_number();
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
@@ -134,7 +134,7 @@
             timeout: config.global_timeout
           };
           return request(options, function(error, response, body) {
-            var err, error2, ref1;
+            var err, ref1;
             try {
               if (response.statusCode === 200) {
                 memcached.set(cache_key, body, config.cache_ttl, function() {
@@ -142,8 +142,8 @@
                 });
               }
               return respond(response.statusCode, body);
-            } catch (error2) {
-              err = error2;
+            } catch (error1) {
+              err = error1;
               res.statusCode = 500;
               close_response("phear-" + thread_number, "Request failed due to an internal server error.", res);
               if ((ref1 = worker.process.status) !== "stopping" && ref1 !== "stopped") {

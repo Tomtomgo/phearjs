@@ -1,3 +1,4 @@
 node_modules/*
 assets/*.xcf
 test.js
+screenshots/*
