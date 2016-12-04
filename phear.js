@@ -100,7 +100,15 @@
       var parsed_body, ref;
       if ((ref = req.query.raw) === "true" || ref === "1") {
         parsed_body = JSON.parse(body);
-        res.status(statusCode).send(parsed_body.content);
+        
+        if(config.worker.as_image_config.base64)
+        {
+          var img = new Buffer(parsed_body.rendered, "base64");
+          res.header("content-type", 'image/'+config.worker.as_image_config.format);
+          res.header("content-Length", img.length);
+          res.send(img); 
+        }else
+          res.status(statusCode).send(parsed_body.content);
       } else {
         res.set("content-type", "application/json");
         res.status(statusCode).send(body);
