@@ -1,5 +1,9 @@
 # Changelog
 
+### 0.6.2 (28-04-2017)
+
+Fix headers parameter not being parsed correctly (#15, thanks @Deatheart)
+
 ### 0.6.1 (10-10-2016)
 
 Changed Jade dependency to Pug

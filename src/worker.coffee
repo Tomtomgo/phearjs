@@ -64,7 +64,7 @@ run_server = ->
     request_headers = {}
     if request_url.query.headers?
       try
-        request_headers = JSON.parse(request_url.query.headers)
+        request_headers = JSON.parse(decodeURIComponent(request_url.query.headers))
       catch
         response.statusCode = 400
         return close_response(this_inst, "Malformed request headers.", response)
