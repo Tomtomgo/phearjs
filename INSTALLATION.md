@@ -1,7 +1,7 @@
 # Installation
 
 - You need NodeJS, if you don't have it: [install NodeJS](https://nodejs.org/en/download/).
-- You need PhantomJS 2 or higher, if you don't have it: [install PhantomJS](http://phantomjs.org/download.html).
+- You need PhantomJS 2 or higher, if you don't have it: [install PhantomJS](http://phantomjs.org/download.html). And you need to put `phantomjs_dir/bin` in path.
 - You need Memcached, if you don't have it: `apt-get install memcached`.
 - Then install PhearJS:
 
